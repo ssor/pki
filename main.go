@@ -24,9 +24,9 @@ const (
     CHAIN = "chain"
 )
 
-type Cmd struct {
+type InputArgs struct {
     // pki or pem_show or chain
-    App        string `arg:"required" help:"Use pki or pem or chain"`
+    Cmd        string `arg:"required" help:"Use pki or pem or chain"`
     CaName     string `help:"CA Name"` // args for build PKI chain files
     BundleName string                  // args for build PKI chain files
     DbPath     string                  // args for build PKI chain files
@@ -35,25 +35,27 @@ type Cmd struct {
     PemFile    string `help:"Specified pem file"`
 }
 
-func (Cmd) Version() string {
+func (InputArgs) Version() string {
     return "version 0.1.0"
 }
-func (Cmd) Description() string {
+func (InputArgs) Description() string {
     return `This program is used as PKI tool.
     Use pki, generate a PKI example through config file
+        dbPath, bundleName, configPath, CaName is needed
     Use pem, generate human readable details of certificate file
+        PemFile or PemFileDir is needed
     Use chain, show how the PKI system working (developing)`
 }
 
 func main() {
     zlog.SetLevel(zlog.DebugLevel)
 
-    var args Cmd
+    var args InputArgs
     args.DbPath = "ca_files"
     args.ConfigPath = "pki.yaml"
     arg.MustParse(&args)
 
-    switch args.App {
+    switch args.Cmd {
     case PKI:
         buildPKI(args.DbPath, args.BundleName, args.ConfigPath, args.CaName)
     case PEM:
@@ -78,6 +80,10 @@ func showPemContent(pemPath, pemDir string) {
 }
 
 func showPemFileDir(pemDir string) {
+    if len(pemDir)<=0{
+        return
+    }
+
     err := filepath.Walk(pemDir, func(path string, info os.FileInfo, err error) error {
         if err != nil {
             zlog.WithError(err).WithField("path", path).Error("error occored alreay")
